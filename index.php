@@ -1,19 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
+<?php
+// Form processing at the top to prevent header issues
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once 'DB_Ops.php';
+    require_once 'FileUploader.php';
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Registration - Registra</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-</head>
+    try {
+        // CSRF validation
+        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+            throw new Exception('Invalid CSRF token');
+        }
 
-<body>
+        $uploader = new FileUploader();
+        $filename = $uploader->upload($_FILES['user_image']);
 
-    <?php include 'header.php'; ?>
+        $userData = [
+            'full_name' => htmlspecialchars($_POST['full_name']),
+            'user_name' => htmlspecialchars($_POST['user_name']),
+            'phone' => htmlspecialchars($_POST['phone']),
+            'whatsapp' => htmlspecialchars($_POST['whatsapp']),
+            'address' => htmlspecialchars($_POST['address']),
+            'password' => password_hash($_POST['password'], PASSWORD_DEFAULT),
+            'user_image' => $filename,
+            'email' => filter_var($_POST['email'], FILTER_SANITIZE_EMAIL)
+        ];
+
+        $db = new DBOperations();
+        if ($db->insertUser($userData)) {
+            $_SESSION['success_message'] = "Registration successful! Welcome " . $userData['full_name'];
+            header("Location: success.php");
+            exit();
+        }
+    } catch (Exception $e) {
+        $_SESSION['error_message'] = $e->getMessage();
+        header("Location: index.php");
+        exit();
+    }
+}
+?>
+
+<?php include 'header.php'; ?>
 
     <main class="form-page-container">
         <div class="form-wrapper">
