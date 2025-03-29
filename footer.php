@@ -99,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Password Match Validation
     function validateConfirmPassword(password, confirmPassword) {
         const feedback = document.getElementById('passwordError');
         if (password !== confirmPassword) {
@@ -164,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Validate image
         const fileInput = document.getElementById('user_image');
         const fileFeedback = fileInput.parentElement.querySelector('.invalid-feedback');
         if (!fileInput.files[0]) {
@@ -174,7 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!isValid) return;
 
-        // Submit form
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
@@ -223,7 +220,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
     </script>
-    <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> -->
-    <!-- <script src="scripts.js"></script> -->
 </body>
 </html>

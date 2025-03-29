@@ -105,7 +105,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
     
     try {
-        // require_once 'C:\xampp\htdocs\Registra\FileUploader.php';
         $db = new DBOperations();
         $uploader = new FileUploader();
         $response = [];
