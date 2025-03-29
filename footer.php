@@ -51,7 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
         address: { pattern: /.{5,}/, message: 'At least 5 characters' },
         password: { pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/, 
                 message: '8+ chars with number & special' },
-        user_image: { pattern: null, message: 'Image required' }
+        confirm_password: { pattern: null, message: 'Passwords do not match' },
+        user_image: { pattern: null, message: 'Profile image required' }
     };
 
     // Real-time Username Validation
@@ -109,10 +110,38 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
+    document.getElementById('email').addEventListener('blur', async function() {
+    const email = this.value.trim();
+    const feedback = document.getElementById('emailFeedback');
+    
+    if (!fields.email.pattern.test(email)) {
+        showValidation(feedback, 'Invalid email format', false);
+        return;
+    }
+
+    try {
+        const response = await fetch('DB_Ops.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `action=check_email&email=${encodeURIComponent(email)}`
+        });
+        
+        const data = await response.json();
+        showValidation(feedback, data.message, data.valid);
+    } catch (error) {
+        showValidation(feedback, 'Validation service unavailable', false);
+    }
+    });
+
     // Form Submission Handler
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         let isValid = true;
+
+        document.querySelectorAll('.invalid-feedback').forEach(el => {
+        el.textContent = '';
+        el.previousElementSibling.style.borderColor = '';
+        });
 
         // Validate all fields
         Object.entries(fields).forEach(([fieldId, config]) => {
@@ -122,7 +151,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (fieldId === 'confirm_password') {
                 const password = document.getElementById('password').value;
-                if (!validateConfirmPassword(password, value)) isValid = false;
+                if (password !== value) {
+                    showValidation(feedback, 'Passwords do not match', false);
+                    isValid = false;
+                }
             } else if (input.required && !value) {
                 showValidation(feedback, 'This field is required', false);
                 isValid = false;
@@ -134,9 +166,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Validate image
         const fileInput = document.getElementById('user_image');
+        const fileFeedback = fileInput.parentElement.querySelector('.invalid-feedback');
         if (!fileInput.files[0]) {
-            showValidation(fileInput.parentElement.querySelector('.invalid-feedback'), 
-                        'Profile image required', false);
+            showValidation(fileFeedback, 'Profile image is required', false);
             isValid = false;
         }
 
@@ -146,6 +178,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        const minProcessingTime = new Promise(resolve => setTimeout(resolve, 2000));
+        await minProcessingTime;
 
         try {
             const formData = new FormData(form);

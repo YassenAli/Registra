@@ -137,6 +137,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 exit;
         
+            case 'check_email':
+                $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+                if (empty($email)) {
+                    echo json_encode(['valid' => false, 'message' => 'Email required']);
+                    exit;
+                }
+                try {
+                    $exists = $db->checkEmailExists($email);
+                    echo json_encode([
+                        'valid' => !$exists,
+                        'message' => $exists ? 'Email already registered' : 'Email available'
+                    ]);
+                } catch (Exception $e) {
+                    echo json_encode(['valid' => false, 'message' => 'Validation error']);
+                }
+                exit;
+
             case 'register':
                 try {
                     // Get regular POST data
@@ -146,26 +163,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $errors = [];
                     
                     // Required fields
-                    $required = ['full_name', 'user_name', 'phone', 'address', 'password', 'email'];
+                    $required = ['full_name', 'user_name', 'phone', 'address', 'password', 'email', 'confirm_password'];
                     foreach ($required as $field) {
                         if (empty($postData[$field])) {
                             $errors[$field] = 'This field is required';
                         }
                     }
             
-                    // Email format
                     if (!filter_var($postData['email'], FILTER_VALIDATE_EMAIL)) {
                         $errors['email'] = 'Invalid email format';
                     }
             
-                    // Password match
                     if ($postData['password'] !== $postData['confirm_password']) {
                         $errors['confirm_password'] = 'Passwords do not match';
                     }
             
-                    // Username existence
                     if ($db->checkUsernameExists($postData['user_name'])) {
                         $errors['user_name'] = 'Username already taken';
+                    }
+
+                    if ($db->checkEmailExists($postData['email'])) {
+                        $errors['email'] = 'Email already registered';
+                    }
+
+                    if (!isset($_FILES['user_image']['name']) || $_FILES['user_image']['name'] === '') {
+                        $errors['user_image'] = 'Profile image required';
                     }
             
                     if (!empty($errors)) {

@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-group floating-label">
                         <label for="confirm_password">Confirm Password</label>
                         <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
-                        <div class="invalid-feedback" id="passFeedback"></div>
+                        <div class="invalid-feedback" id="confirmPasswordFeedback"></div>
                     </div>
 
                     <div class="form-group file-upload">
@@ -120,8 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <span class="upload-button"><i class="fas fa-cloud-upload-alt"></i> Choose Profile Image</span>
                             <span class="file-name"></span>
                             <input type="file" id="user_image" name="user_image" accept="image/*" required>
+                            <div class="invalid-feedback" id="userImageFeedback"></div>
                         </label>
-                        <div class="invalid-feedback" id="uploadFeedback"></div>
                     </div>
             </div>
 
