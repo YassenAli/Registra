@@ -1,6 +1,6 @@
 <?php
 class DBOperations {
-    private $host = 'localhost:8080';
+    private $host = 'localhost';
     private $user = 'root';
     private $pass = '';
     private $dbname = 'registra';
@@ -57,36 +57,159 @@ class DBOperations {
     }
 }
 
-// Handle AJAX requests
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+class FileUploader {
+    private $uploadDir;
+    private $allowedTypes;
+    private $maxSize;
+
+    public function __construct($uploadDir = 'uploads/', $allowedTypes = ['jpg', 'jpeg', 'png'], $maxSize = 2097152) {
+        $this->uploadDir = $uploadDir;
+        $this->allowedTypes = $allowedTypes;
+        $this->maxSize = $maxSize;
+        $this->createUploadDir();
+    }
+
+    private function createUploadDir() {
+        if (!file_exists($this->uploadDir)) {
+            mkdir($this->uploadDir, 0755, true);
+        }
+    }
+
+    public function upload($file) {
+        if (!$this->validate($file)) {
+            throw new Exception('Invalid file');
+        }
+
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $filename = uniqid() . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
+        $targetPath = $this->uploadDir . $filename;
+
+        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+            throw new Exception('File upload failed');
+        }
+
+        return $filename;
+    }
+
+    private function validate($file) {
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        
+        return in_array($extension, $this->allowedTypes) &&
+            $file['size'] <= $this->maxSize &&
+            getimagesize($file['tmp_name']);
+    }
+}
+
+// Handle all AJAX requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
     
     try {
+        // require_once 'C:\xampp\htdocs\Registra\FileUploader.php';
         $db = new DBOperations();
+        $uploader = new FileUploader();
+        $response = [];
+
+        // CSRF validation for all actions
+        // if (!isset($_POST['csrf_token']) {
+        //     throw new Exception('CSRF token missing');
+        // }
         
-        switch ($_POST['action']) {
+        // if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        //     throw new Exception('Invalid CSRF token');
+        // }
+
+        switch ($_POST['action'] ?? '') {
             case 'check_username':
-                if (empty($_POST['username'])) {
+                $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_STRING);
+                if (empty($username)) {
                     echo json_encode(['valid' => false, 'message' => 'Username required']);
                     exit;
                 }
-                $exists = $db->checkUsernameExists($_POST['username']);
-                echo json_encode(['valid' => !$exists, 'message' => $exists ? 'Username taken' : 'Available']);
-                break;
-
-            case 'check_email':
-                if (empty($_POST['email'])) {
-                    echo json_encode(['valid' => false, 'message' => 'Email required']);
+                try {
+                    $exists = $db->checkUsernameExists($username);
+                    echo json_encode([
+                        'valid' => !$exists,
+                        'message' => $exists ? 'Username already taken' : 'Username available'
+                    ]);
+                } catch (Exception $e) {
+                    echo json_encode(['valid' => false, 'message' => 'Validation error']);
+                }
+                exit;
+        
+            case 'register':
+                try {
+                    // Get regular POST data
+                    $postData = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+                    
+                    // Server-side validation
+                    $errors = [];
+                    
+                    // Required fields
+                    $required = ['full_name', 'user_name', 'phone', 'address', 'password', 'email'];
+                    foreach ($required as $field) {
+                        if (empty($postData[$field])) {
+                            $errors[$field] = 'This field is required';
+                        }
+                    }
+            
+                    // Email format
+                    if (!filter_var($postData['email'], FILTER_VALIDATE_EMAIL)) {
+                        $errors['email'] = 'Invalid email format';
+                    }
+            
+                    // Password match
+                    if ($postData['password'] !== $postData['confirm_password']) {
+                        $errors['confirm_password'] = 'Passwords do not match';
+                    }
+            
+                    // Username existence
+                    if ($db->checkUsernameExists($postData['user_name'])) {
+                        $errors['user_name'] = 'Username already taken';
+                    }
+            
+                    if (!empty($errors)) {
+                        throw new Exception(json_encode(['errors' => $errors]));
+                    }
+            
+                    // Process file upload
+                    $filename = $uploader->upload($_FILES['user_image']);
+            
+                    // Prepare user data
+                    $userData = [
+                        'full_name' => $postData['full_name'],
+                        'user_name' => $postData['user_name'],
+                        'phone' => $postData['phone'],
+                        'whatsapp' => $postData['whatsapp'] ?? '',
+                        'address' => $postData['address'],
+                        'password' => password_hash($postData['password'], PASSWORD_DEFAULT),
+                        'user_image' => $filename,
+                        'email' => filter_var($postData['email'], FILTER_SANITIZE_EMAIL)
+                    ];
+            
+                    if ($db->insertUser($userData)) {
+                        $response['success'] = true;
+                        $response['redirect'] = 'success.php';
+                    } else {
+                        throw new Exception('Registration failed');
+                    }
+                } catch (Exception $e) {
+                    $errorData = json_decode($e->getMessage(), true);
+                    $response = $errorData ?: ['success' => false, 'message' => $e->getMessage()];
+                    echo json_encode($response);
                     exit;
                 }
-                $exists = $db->checkEmailExists($_POST['email']);
-                echo json_encode(['valid' => !$exists, 'message' => $exists ? 'Email exists' : 'Valid']);
                 break;
+
+            default:
+                throw new Exception('Invalid action');
         }
     } catch (Exception $e) {
-        echo json_encode(['error' => 'Database error']);
+        http_response_code(400);
+        $response = ['success' => false, 'message' => $e->getMessage()];
     }
+
+    echo json_encode($response);
     exit;
 }
-
 ?>
