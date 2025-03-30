@@ -40,6 +40,7 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
+
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('registrationForm');
     const fields = {
@@ -47,7 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
         user_name: { pattern: /^[a-zA-Z0-9_]{3,}$/, message: '3+ chars (letters, numbers, _)' },
         email: { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Invalid email format' },
         phone: { pattern: /^\d{10}$/, message: '10 digits required' },
-        whatsapp: { pattern: /^\d{10}$/, message: '10 digits required' },
+        // pattern for whatsapp: [1-9]\d{7,14}$
+        whatsapp: { pattern: /^\d{7,14}$/, message: 'not valid format whatsApp number' },
         address: { pattern: /.{5,}/, message: 'At least 5 characters' },
         password: { pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/, 
                 message: '8+ chars with number & special' },
@@ -132,6 +134,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     });
 
+    // WhatsApp Validation Handler
+    document.getElementById('validateWhatsApp').addEventListener('click', async () => {
+        const whatsappInput = document.getElementById('whatsapp');
+        const feedback = document.getElementById('whatsAppFeedback');
+        const number = whatsappInput.value.trim();
+
+        // Basic client-side validation
+        // if (!/^\d{10}$/.test(number)) {
+        //     showValidation(feedback, 'Invalid phone number format (10 digits required)', false);
+        //     return;
+        // }
+
+        feedback.textContent = 'Validating...';
+        feedback.style.color = '#666';
+
+        try {
+            const response = await fetch('API_Ops.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `action=validate_whatsapp&number=${encodeURIComponent(number)}`
+            });
+            
+            const data = await response.json();
+            // showValidationWhatsApp(feedback, data.message, data.valid);
+            if (data.valid) {
+                showValidation(feedback, '✓ Valid WhatsApp number', true);
+            } else {
+                showValidation(feedback, data.message || 'Invalid WhatsApp number', false);
+            }
+        } catch (error) {
+            showValidationWhatsApp(feedback, 'Validation service unavailable', false);
+        }
+    });
+
     // Form Submission Handler
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -210,6 +248,13 @@ document.addEventListener('DOMContentLoaded', () => {
         element.textContent = message;
         element.style.color = isValid ? '#28a745' : '#dc3545';
         element.previousElementSibling.style.borderColor = isValid ? '#28a745' : '#dc3545';
+    }
+
+    function showValidationWhatsApp(element, message, isValid) {
+        if (!element) return;
+        element.textContent = message;
+        element.style.color = isValid ? '#28a745' : '#dc3545';
+        element.previousElementSibling.previousElementSibling.style.borderColor = isValid ? '#28a745' : '#dc3545';
     }
 
     function showToast(message, type = 'success') {

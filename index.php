@@ -85,7 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-group floating-label">
                         <label for="whatsapp">WhatsApp Number</label>
                         <input type="text" id="whatsapp" name="whatsapp" class="form-control"
-                            pattern="[0-9]{10}">
+                                pattern="^[1-9]\d{7,14}$" required title="Include country code (e.g. 20 for Egypt)">
+                            <small class="form-text text-muted">Must include country code (e.g. 20 for Egypt, 1 for USA/Canada)</small>
                         <button type="button" class="whatsapp-check" id="validateWhatsApp">
                             <i class="fab fa-whatsapp"></i> Validate
                         </button>
