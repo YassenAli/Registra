@@ -6,8 +6,8 @@
                     <h4 class="footer-heading">Quick Links</h4>
                     <ul class="footer-links">
                         <li><a href="index.php">Registration</a></li>
-                        <li><a href="terms.php">Terms of Service</a></li>
-                        <li><a href="privacy.php">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
                     </ul>
                 </div>
                 
@@ -139,12 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const whatsappInput = document.getElementById('whatsapp');
         const feedback = document.getElementById('whatsAppFeedback');
         const number = whatsappInput.value.trim();
-
-        // Basic client-side validation
-        // if (!/^\d{10}$/.test(number)) {
-        //     showValidation(feedback, 'Invalid phone number format (10 digits required)', false);
-        //     return;
-        // }
+        
 
         feedback.textContent = 'Validating...';
         feedback.style.color = '#666';
@@ -164,6 +159,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 showValidation(feedback, '✓ Valid WhatsApp number', true);
             } else {
                 showValidation(feedback, data.message || 'Invalid WhatsApp number', false);
+                const button = document.getElementById('validateWhatsApp');
+                button.classList.add('invalid');
+                setTimeout(() => {
+                    button.classList.remove('invalid');
+                }, 500);
             }
         } catch (error) {
             showValidationWhatsApp(feedback, 'Validation service unavailable', false);
