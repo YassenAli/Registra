@@ -11,6 +11,10 @@ Registra includes:
 - **Image Upload:** Enables users to upload a profile image, with the image file stored on the server and its name stored in the database.
 - **WhatsApp Number Validation:** Provides a button to validate the WhatsApp number using the third-party MDBI API available at [RapidAPI: WhatsApp Number Validator](https://rapidapi.com/finestoreuk/api/whatsapp-numbervalidator3).
 
+## Project Demo
+
+Watch the project demonstration video: [Project Demo](https://drive.google.com/file/d/15bBE9DWbK6C_rQYHgPtYCcoW_Z7Snfpo/view?usp=drive_link)
+
 ## Project Structure
 
 The project consists of the following PHP and JavaScript files:
